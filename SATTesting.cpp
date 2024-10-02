@@ -36,6 +36,8 @@ struct CoolCube
 	Model* Vertices[];
 };
 
+void TwoSquaresSAT(Square& Sq1, Square& Sq2);
+
 int main()
 {
 	// Create a 3D engine (using TL11 engine here) and open a window for it
@@ -194,10 +196,43 @@ void Square::UpdateVerticesPosition()
 // Right: Corner[2] - Corner[3]
 void Square::UpdateAxesArray()
 {
-	UpdateVerticesPosition();
-	
 	for (int i = 0; i < SquareNumAxesToCheck; i++)
 	{
 		AxesArray[i] = VerticesPositionArray[i + 1].Subtract(VerticesPositionArray[i + 2]);
+		AxesArray[i].Normalise();
+	}
+}
+
+void TwoSquaresSAT(Square& Sq1, Square& Sq2)
+{
+	// Udpate vertices positions of both squares
+	Sq1.UpdateVerticesPosition();
+	Sq2.UpdateVerticesPosition();	
+
+	// Update axes of first square
+	Sq1.UpdateAxesArray();
+
+	// Loop through axes array of first sqaure
+	for (int i = 0; i < SquareNumAxesToCheck; i++)
+	{
+		// Project each corner onto the axis and keep track of min and max.
+		Vector2 projMinMaxArr[SquareNumAxesToCheck];
+		projMinMaxArr[i].x = Sq1.VerticesPositionArray[0].DotProduct(Sq1.AxesArray[i]);
+		projMinMaxArr[i].y = projMinMaxArr[i].x;
+
+		for (int j = 1; j < SquareNumCorners; j++)
+		{
+			/*projection = Sq1.VerticesPositionArray[j].DotProduct(Sq1.AxesArray[i]);
+
+			if (projection < p1Min)
+			{
+				p1Min = projection;
+			}
+
+			if (projection > p1Max)
+			{
+				p1Max = projection;
+			}*/
+		}
 	}
 }
