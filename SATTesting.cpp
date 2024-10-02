@@ -4,6 +4,7 @@
 using namespace tle;
 
 const int SquareNumCorners = 4;
+const int SquareNumAxesToCheck = 2;
 
 struct Vector2
 {
@@ -21,8 +22,12 @@ struct Square
 	Model* CentreDummy;
 	Model* VerticesArray[SquareNumCorners];
 	float SideLength;
+	Vector2 VerticesPositionArray[SquareNumCorners];
+	Vector2 AxesArray[SquareNumAxesToCheck];
 
 	void InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const int Side);
+	void UpdateVerticesPosition();
+	void UpdateAxesArray();
 };
 
 struct CoolCube
@@ -42,7 +47,7 @@ int main()
 
 	/**** Set up your scene here ****/
 	Mesh* CubeMesh = myEngine->LoadMesh("Cube.fbx");
-	Model* Cube = CubeMesh->CreateModel();
+	/*Model* Cube = CubeMesh->CreateModel();*/
 
 	Mesh* FloorMesh = myEngine->LoadMesh("Floor.fbx");
 	Model* Floor = FloorMesh->CreateModel();
@@ -51,7 +56,7 @@ int main()
 	Model* Sphere = SphereMesh->CreateModel();*/
 
 	Mesh* BulletMesh = myEngine->LoadMesh("Bullet.x");
-	Model* Bullet = BulletMesh->CreateModel();
+	/*Model* Bullet = BulletMesh->CreateModel();*/
 
 	/*Mesh* TorusMesh = myEngine->LoadMesh("Torus.fbx");
 	Model* Torus = TorusMesh->CreateModel();*/
@@ -61,6 +66,14 @@ int main()
 
 	const float MoveSpeed = 10.0f;
 	const float RotateSpeed = 60.0f;
+
+	// Cube test
+	Square Test;
+	Test.InitialiseSquare(BulletMesh, BulletMesh, 10.0f);
+
+	Square Test2;
+	Test2.InitialiseSquare(BulletMesh, BulletMesh, 20.0f);
+	Test2.CentreDummy->SetPosition(50.0f, 0.0f, 0.0f);
 
 	// The main game loop, repeat until engine is stopped
 	while (myEngine->IsRunning())
@@ -72,25 +85,23 @@ int main()
 
 		/**** Update your scene each frame here ****/
 
-		// Cube control - translate
+		// Square control - translate
 		if (myEngine->KeyHeld(Key_W))
 		{
-			Cube->MoveLocalZ(DeltaTime * MoveSpeed);
+			Test.CentreDummy->MoveLocalZ(DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_S))
 		{
-			Cube->MoveLocalZ(-DeltaTime * MoveSpeed);
+			Test.CentreDummy->MoveLocalZ(-DeltaTime * MoveSpeed);
 		}
-		// Cube control - rotate
 		if (myEngine->KeyHeld(Key_A))
 		{
-			Cube->RotateY(-DeltaTime * RotateSpeed);
+			Test.CentreDummy->MoveLocalX(-DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_D))
 		{
-			Cube->RotateY(DeltaTime * RotateSpeed);
+			Test.CentreDummy->MoveLocalX(DeltaTime * MoveSpeed);
 		}
-
 
 		// Stop if the Escape key is pressed
 		if (myEngine->KeyHit( Key_Escape ))
@@ -166,5 +177,27 @@ void Square::InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const int Side)
 		{
 			VerticesArray[i]->SetLocalZ(-HalfSide);
 		}
+	}
+}
+
+void Square::UpdateVerticesPosition()
+{
+	for (int i = 0; i < SquareNumCorners; i++)
+	{
+		VerticesPositionArray[i] = { VerticesArray[i]->GetX(), VerticesArray[i]->GetZ() };
+	}
+}
+
+// Only need to check 2 of the 4 axes for each square, because there are 2 parallel pairs of axes.
+// Check the axis perpendicular to top and right sides.
+// Top: Corner[1] - Corner[2]
+// Right: Corner[2] - Corner[3]
+void Square::UpdateAxesArray()
+{
+	UpdateVerticesPosition();
+	
+	for (int i = 0; i < SquareNumAxesToCheck; i++)
+	{
+		AxesArray[i] = VerticesPositionArray[i + 1].Subtract(VerticesPositionArray[i + 2]);
 	}
 }
