@@ -45,7 +45,8 @@ int main()
 	myEngine->StartWindowed();
 
 	// Add default folder for meshes and other media
-	myEngine->AddMediaFolder( "C:\\Users\\Public\\Documents\\TL-Engine11\\Media" );
+	//myEngine->AddMediaFolder( "C:\\Users\\Public\\Documents\\TL-Engine11\\Media" );
+	myEngine->AddMediaFolder(".\\Media");
 
 	/**** Set up your scene here ****/
 	Mesh* CubeMesh = myEngine->LoadMesh("Cube.fbx");
