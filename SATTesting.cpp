@@ -4,6 +4,7 @@
 using namespace tle;
 
 const int SquareNumCorners = 4;
+const int SquareNumAxesToCheck = 2;
 
 struct Vector2
 {
@@ -21,9 +22,21 @@ struct Square
 	Model* CentreDummy;
 	Model* VerticesArray[SquareNumCorners];
 	float SideLength;
+	Vector2 VerticesPositionArray[SquareNumCorners];
+	Vector2 AxesArray[SquareNumAxesToCheck];
 
 	void InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const int Side);
+	void UpdateVerticesPosition();
+	void UpdateAxesArray();
 };
+
+struct CoolCube
+{
+	Model* CubeModel;
+	Model* Vertices[];
+};
+
+void TwoSquaresSAT(Square& Sq1, Square& Sq2);
 
 int main()
 {
@@ -35,9 +48,34 @@ int main()
 	myEngine->AddMediaFolder( "C:\\Users\\Public\\Documents\\TL-Engine11\\Media" );
 
 	/**** Set up your scene here ****/
-	Square Test;
+	Mesh* CubeMesh = myEngine->LoadMesh("Cube.fbx");
+	/*Model* Cube = CubeMesh->CreateModel();*/
 
-	
+	Mesh* FloorMesh = myEngine->LoadMesh("Floor.fbx");
+	Model* Floor = FloorMesh->CreateModel();
+
+	/*Mesh* SphereMesh = myEngine->LoadMesh("Sphere.fbx");
+	Model* Sphere = SphereMesh->CreateModel();*/
+
+	Mesh* BulletMesh = myEngine->LoadMesh("Bullet.x");
+	/*Model* Bullet = BulletMesh->CreateModel();*/
+
+	/*Mesh* TorusMesh = myEngine->LoadMesh("Torus.fbx");
+	Model* Torus = TorusMesh->CreateModel();*/
+
+	Camera* MyCamera = myEngine->CreateCamera(ManualCamera, 0.0f, 100.0f, 0.0f);
+	MyCamera->RotateX(90.0f);
+
+	const float MoveSpeed = 10.0f;
+	const float RotateSpeed = 60.0f;
+
+	// Cube test
+	Square Test;
+	Test.InitialiseSquare(BulletMesh, BulletMesh, 10.0f);
+
+	Square Test2;
+	Test2.InitialiseSquare(BulletMesh, BulletMesh, 20.0f);
+	Test2.CentreDummy->SetPosition(50.0f, 0.0f, 0.0f);
 
 	// The main game loop, repeat until engine is stopped
 	while (myEngine->IsRunning())
@@ -45,8 +83,27 @@ int main()
 		// Draw the scene
 		myEngine->DrawScene();
 
+		const float DeltaTime = myEngine->FrameTime();
+
 		/**** Update your scene each frame here ****/
 
+		// Square control - translate
+		if (myEngine->KeyHeld(Key_W))
+		{
+			Test.CentreDummy->MoveLocalZ(DeltaTime * MoveSpeed);
+		}
+		if (myEngine->KeyHeld(Key_S))
+		{
+			Test.CentreDummy->MoveLocalZ(-DeltaTime * MoveSpeed);
+		}
+		if (myEngine->KeyHeld(Key_A))
+		{
+			Test.CentreDummy->MoveLocalX(-DeltaTime * MoveSpeed);
+		}
+		if (myEngine->KeyHeld(Key_D))
+		{
+			Test.CentreDummy->MoveLocalX(DeltaTime * MoveSpeed);
+		}
 
 		// Stop if the Escape key is pressed
 		if (myEngine->KeyHit( Key_Escape ))
@@ -121,6 +178,61 @@ void Square::InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const int Side)
 		else
 		{
 			VerticesArray[i]->SetLocalZ(-HalfSide);
+		}
+	}
+}
+
+void Square::UpdateVerticesPosition()
+{
+	for (int i = 0; i < SquareNumCorners; i++)
+	{
+		VerticesPositionArray[i] = { VerticesArray[i]->GetX(), VerticesArray[i]->GetZ() };
+	}
+}
+
+// Only need to check 2 of the 4 axes for each square, because there are 2 parallel pairs of axes.
+// Check the axis perpendicular to top and right sides.
+// Top: Corner[1] - Corner[2]
+// Right: Corner[2] - Corner[3]
+void Square::UpdateAxesArray()
+{
+	for (int i = 0; i < SquareNumAxesToCheck; i++)
+	{
+		AxesArray[i] = VerticesPositionArray[i + 1].Subtract(VerticesPositionArray[i + 2]);
+		AxesArray[i].Normalise();
+	}
+}
+
+void TwoSquaresSAT(Square& Sq1, Square& Sq2)
+{
+	// Udpate vertices positions of both squares
+	Sq1.UpdateVerticesPosition();
+	Sq2.UpdateVerticesPosition();	
+
+	// Update axes of first square
+	Sq1.UpdateAxesArray();
+
+	// Loop through axes array of first sqaure
+	for (int i = 0; i < SquareNumAxesToCheck; i++)
+	{
+		// Project each corner onto the axis and keep track of min and max.
+		Vector2 projMinMaxArr[SquareNumAxesToCheck];
+		projMinMaxArr[i].x = Sq1.VerticesPositionArray[0].DotProduct(Sq1.AxesArray[i]);
+		projMinMaxArr[i].y = projMinMaxArr[i].x;
+
+		for (int j = 1; j < SquareNumCorners; j++)
+		{
+			/*projection = Sq1.VerticesPositionArray[j].DotProduct(Sq1.AxesArray[i]);
+
+			if (projection < p1Min)
+			{
+				p1Min = projection;
+			}
+
+			if (projection > p1Max)
+			{
+				p1Max = projection;
+			}*/
 		}
 	}
 }
