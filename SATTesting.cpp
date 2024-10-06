@@ -1,6 +1,9 @@
 // SATTesting.cpp: A program using the TL-Engine
 
 #include "TL-Engine11.h" // TL-Engine11 include file and namespace
+
+#include <vector>
+
 using namespace tle;
 
 const int SquareNumCorners = 4;
@@ -15,6 +18,19 @@ struct Vector2
 	float Length() const;
 	Vector2 Subtract(const Vector2& OtherVec) const;
 	float DotProduct(const Vector2& OtherVec) const;
+};
+
+// This is for regular polygons for now.
+struct Shape
+{
+	Model* mCentre;
+	std::vector<Model*> mVertices;
+	std::vector<Vector2> mVerticesPositions;
+	std::vector<Vector2> mAxes;
+
+	void InitialiseShape(Mesh* DummyMesh, Mesh* CornerMesh, const int NumSides, const float SideLength);
+	void UpdateVerticesPosition();
+	void UpdateAxes();
 };
 
 struct Square
@@ -86,6 +102,10 @@ int main()
 	Square Test2;
 	Test2.InitialiseSquare(BulletMesh, BulletMesh, 20.0f);
 	Test2.CentreDummy->SetPosition(50.0f, 0.0f, 0.0f);
+
+	// shape test
+	Shape Pentagon;
+	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 15.0f);
 
 	// The main game loop, repeat until engine is stopped
 	while (myEngine->IsRunning())
@@ -316,5 +336,58 @@ void GetMinMaxVertexOnAxisSquare(const Vector2& Axis, const Square& Sq, float& M
 		{
 			Max = Projection;
 		}
+	}
+}
+
+void Shape::InitialiseShape(Mesh* DummyMesh, Mesh* CornerMesh, const int NumSides, const float SideLength)
+{
+	// Create centre dummy model
+	mCentre = DummyMesh->CreateModel();
+
+	// Calculate how many degrees to turn to each corner
+	const float DegreesToTurn = 360.0f / NumSides;
+	
+	// Create corners with correct local position to the centre
+	for (int i = 0; i < NumSides; i++)
+	{
+		// Create corner
+		mVertices.push_back(CornerMesh->CreateModel());
+
+		// Change corner's position and attach to centre
+		mVertices.at(i)->MoveLocalX(SideLength);
+		mVertices.at(i)->AttachToParent(mCentre);
+
+		// Rotate centre
+		mCentre->RotateY(i * DegreesToTurn);
+	}
+
+	// Reserve space in VerticesPostitions and Axes vectors
+	mVerticesPositions.reserve(NumSides);
+	mAxes.reserve(NumSides);
+}
+
+void Shape::UpdateVerticesPosition()
+{
+	for (int i = 0; i < mVertices.size(); i++)
+	{
+		mVerticesPositions.at(i) = { mVertices.at(i)->GetX(), mVertices.at(i)->GetZ() };
+	}
+}
+
+// Axes are one point minus another point. There will be the same number of axes as vertices.
+void Shape::UpdateAxes()
+{
+	for (int i = 0; i < mVertices.size(); i++)
+	{
+		if (i == mVertices.size())
+		{
+			mAxes.at(i) = mVerticesPositions.at(0).Subtract(mVerticesPositions.at(i));
+		}
+		else
+		{
+			mAxes.at(i) = mVerticesPositions.at(i + 1).Subtract(mVerticesPositions.at(i));
+		}
+
+		mAxes.at(i).Normalise();
 	}
 }
