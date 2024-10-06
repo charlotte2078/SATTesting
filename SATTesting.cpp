@@ -97,6 +97,16 @@ int main()
 
 		/**** Update your scene each frame here ****/
 
+		// Square control - rotate
+		if (myEngine->KeyHeld(Key_E))
+		{
+			Test.CentreDummy->RotateY(DeltaTime * RotateSpeed);
+		}
+		if (myEngine->KeyHeld(Key_Q))
+		{
+			Test.CentreDummy->RotateY(-DeltaTime * RotateSpeed);
+		}
+		
 		// Square control - translate
 		if (myEngine->KeyHeld(Key_W))
 		{
