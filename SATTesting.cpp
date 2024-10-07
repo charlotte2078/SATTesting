@@ -8,6 +8,7 @@ using namespace tle;
 
 const int SquareNumCorners = 4;
 const int SquareNumAxesToCheck = 2;
+const float DegreesToRadians = 3.14159265359f / 180.0f;
 
 struct Vector2
 {
@@ -59,9 +60,15 @@ struct CoolCube
 	Model* Vertices[];
 };
 
+// SAT for Squares function prototype
 bool TwoSquaresSAT(Square& Sq1, Square& Sq2);
 bool CheckCollisionAxisSquares(const Vector2& Axis, const Square& Sq1, const Square& Sq2);
 void GetMinMaxVertexOnAxisSquare(const Vector2& Axis, const Square& Sq, float& Min, float& Max);
+
+// SAT for Shapes function prototypes
+bool TwoShapesSAT(Shape& First, Shape& Second);
+bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second);
+void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& Min, float& Max);
 
 int main()
 {
@@ -96,12 +103,13 @@ int main()
 	const float RotateSpeed = 60.0f;
 
 	// Cube test
-	Square Test;
-	Test.InitialiseSquare(BulletMesh, BulletMesh, 10.0f);
+	Shape Test;
+	Test.InitialiseShape(BulletMesh, BulletMesh, 4, 10.0f);
+	Test.mCentre->SetPosition(-50.0f, 0.0f, 0.0f);
 
-	Square Test2;
-	Test2.InitialiseSquare(BulletMesh, BulletMesh, 20.0f);
-	Test2.CentreDummy->SetPosition(50.0f, 0.0f, 0.0f);
+	Shape Test2;
+	Test2.InitialiseShape(BulletMesh, BulletMesh, 4, 20.0f);
+	Test2.mCentre->SetPosition(50.0f, 0.0f, 0.0f);
 
 	// shape test
 	Shape Pentagon;
@@ -117,44 +125,96 @@ int main()
 
 		/**** Update your scene each frame here ****/
 
-		// Square control - rotate
+		//// Square control - rotate
+		//if (myEngine->KeyHeld(Key_E))
+		//{
+		//	Test.CentreDummy->RotateY(DeltaTime * RotateSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_Q))
+		//{
+		//	Test.CentreDummy->RotateY(-DeltaTime * RotateSpeed);
+		//}
+
+		//// Square control - translate
+		//if (myEngine->KeyHeld(Key_W))
+		//{
+		//	Test.CentreDummy->MoveLocalZ(DeltaTime * MoveSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_S))
+		//{
+		//	Test.CentreDummy->MoveLocalZ(-DeltaTime * MoveSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_A))
+		//{
+		//	Test.CentreDummy->MoveLocalX(-DeltaTime * MoveSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_D))
+		//{
+		//	Test.CentreDummy->MoveLocalX(DeltaTime * MoveSpeed);
+		//}
+
+		//// Check collision
+		//if (TwoSquaresSAT(Test, Test2))
+		//{
+		//	Test.CentreDummy->SetSkin("RedBall.jpg");
+		//	Test2.CentreDummy->SetSkin("RedBall.jpg");
+		//}
+		//else
+		//{
+		//	Test.CentreDummy->SetSkin("Grass1.jpg");
+		//	Test2.CentreDummy->SetSkin("Grass1.jpg");
+		//}
+
+		// Shape control - rotate
 		if (myEngine->KeyHeld(Key_E))
 		{
-			Test.CentreDummy->RotateY(DeltaTime * RotateSpeed);
+			Pentagon.mCentre->RotateY(DeltaTime * RotateSpeed);
 		}
 		if (myEngine->KeyHeld(Key_Q))
 		{
-			Test.CentreDummy->RotateY(-DeltaTime * RotateSpeed);
+			Pentagon.mCentre->RotateY(-DeltaTime * RotateSpeed);
 		}
-		
+
 		// Square control - translate
 		if (myEngine->KeyHeld(Key_W))
 		{
-			Test.CentreDummy->MoveLocalZ(DeltaTime * MoveSpeed);
+			Pentagon.mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_S))
 		{
-			Test.CentreDummy->MoveLocalZ(-DeltaTime * MoveSpeed);
+			Pentagon.mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_A))
 		{
-			Test.CentreDummy->MoveLocalX(-DeltaTime * MoveSpeed);
+			Pentagon.mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_D))
 		{
-			Test.CentreDummy->MoveLocalX(DeltaTime * MoveSpeed);
+			Pentagon.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
 		}
 
-		// Check collision
-		if (TwoSquaresSAT(Test, Test2))
+		// Check collision - First square and shape
+		if (TwoShapesSAT(Pentagon, Test))
 		{
-			Test.CentreDummy->SetSkin("RedBall.jpg");
-			Test2.CentreDummy->SetSkin("RedBall.jpg");
+			Test.mCentre->SetSkin("RedBall.jpg");
+			Pentagon.mCentre->SetSkin("RedBall.jpg");
 		}
 		else
 		{
-			Test.CentreDummy->SetSkin("Grass1.jpg");
-			Test2.CentreDummy->SetSkin("Grass1.jpg");
+			Test.mCentre->SetSkin("Grass1.jpg");
+			Pentagon.mCentre->SetSkin("Grass1.jpg");
+		}
+
+		// Check collision - Second square and shape
+		if (TwoShapesSAT(Pentagon, Test2))
+		{
+			Test2.mCentre->SetSkin("RedBall.jpg");
+			Pentagon.mCentre->SetSkin("RedBall.jpg");
+		}
+		else
+		{
+			Test2.mCentre->SetSkin("Grass1.jpg");
+			Pentagon.mCentre->SetSkin("Grass1.jpg");
 		}
 
 		// Stop if the Escape key is pressed
@@ -346,24 +406,23 @@ void Shape::InitialiseShape(Mesh* DummyMesh, Mesh* CornerMesh, const int NumSide
 
 	// Calculate how many degrees to turn to each corner
 	const float DegreesToTurn = 360.0f / NumSides;
-	
+	const float RadiansToTurn = DegreesToTurn * DegreesToRadians;
+
 	// Create corners with correct local position to the centre
 	for (int i = 0; i < NumSides; i++)
 	{
-		// Create corner
+		// Create corner and attach to centre
 		mVertices.push_back(CornerMesh->CreateModel());
-
-		// Change corner's position and attach to centre
-		mVertices.at(i)->MoveLocalX(SideLength);
 		mVertices.at(i)->AttachToParent(mCentre);
 
-		// Rotate centre
-		mCentre->RotateY(i * DegreesToTurn);
-	}
+		// Change corner's local position
+		mVertices.at(i)->MoveLocalX(SideLength * sin(i * RadiansToTurn));
+		mVertices.at(i)->MoveLocalZ(SideLength * cos(i * RadiansToTurn));
 
-	// Reserve space in VerticesPostitions and Axes vectors
-	mVerticesPositions.reserve(NumSides);
-	mAxes.reserve(NumSides);
+		// Reserve space in VerticesPositions and Axes vectors.
+		mVerticesPositions.push_back({ mVertices.at(i)->GetX(), mVertices.at(i)->GetZ() });
+		mAxes.push_back({ 0.0f, 0.0f });
+	}
 }
 
 void Shape::UpdateVerticesPosition()
@@ -379,7 +438,7 @@ void Shape::UpdateAxes()
 {
 	for (int i = 0; i < mVertices.size(); i++)
 	{
-		if (i == mVertices.size())
+		if (i == mVertices.size() - 1)
 		{
 			mAxes.at(i) = mVerticesPositions.at(0).Subtract(mVerticesPositions.at(i));
 		}
@@ -389,5 +448,90 @@ void Shape::UpdateAxes()
 		}
 
 		mAxes.at(i).Normalise();
+	}
+}
+
+
+bool TwoShapesSAT(Shape& First, Shape& Second)
+{
+	// Udpate vertices positions of both squares
+	First.UpdateVerticesPosition();
+	Second.UpdateVerticesPosition();
+
+	// Update axes of first square
+	First.UpdateAxes();
+
+	// Check each axis for collision. If any return false then there is no collision.
+	for (int i = 0; i < First.mAxes.size(); i++)
+	{
+		if (!CheckCollisionAxisShapes(First.mAxes.at(i), First, Second))
+		{
+			return false;
+		}
+	}
+
+	// Update axes of second square
+	Second.UpdateAxes();
+
+	// Check each axis for collision.
+	for (int i = 0; i < Second.mAxes.size(); i++)
+	{
+		if (!CheckCollisionAxisShapes(Second.mAxes.at(i), First, Second))
+		{
+			return false;
+		}
+	}
+
+	// Must be colliding if reach this point!
+	return true;
+}
+
+// Using this link for the outline of the implementation. 
+// https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics4collisiondetection/2017%20Tutorial%204%20-%20Collision%20Detection.pdf
+bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second)
+{
+	// point A = min on shape 1, point B = max on shape 1.
+	// point C = min on shape 2, point D = max on shape 2.
+
+	// get A,B,C,D
+	float A, B, C, D;
+	GetMinMaxVertexOnAxisShape(Axis, First, A, B);
+	GetMinMaxVertexOnAxisShape(Axis, Second, C, D);
+
+	// Overlap test - first way (A < C AND B > C)
+	if (A <= C && B >= C)
+	{
+		return true;
+	}
+
+	// Overlap test - second way (C < A AND D > A)
+	if (C <= A && D >= A)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& Min, float& Max)
+{
+	// Assume initial min/max
+	Min = Shape.mVerticesPositions.at(0).DotProduct(Axis);
+	Max = Min;
+
+	// Loop through remaining vertices to find min/max
+	for (int i = 1; i < Shape.mVerticesPositions.size(); i++)
+	{
+		float Projection = Shape.mVerticesPositions.at(i).DotProduct(Axis);
+
+		if (Projection < Min)
+		{
+			Min = Projection;
+		}
+
+		if (Projection > Max)
+		{
+			Max = Projection;
+		}
 	}
 }
