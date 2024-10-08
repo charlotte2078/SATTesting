@@ -47,11 +47,14 @@ struct Square
 	void UpdateAxesArray();
 };
 
+// Minimum information needed to resolve a collision
+// Supported by https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics4collisiondetection/2017%20Tutorial%204%20-%20Collision%20Detection.pdf
+// Page 4-5
 struct CollisionData
 {
-	Vector2 mAxis;
-	float mPenetration;
-	Vector2 mPointOnPlane;
+	float mPenetration; // minimum distance along the normal the intersecting object must move
+	Vector2 mNormal; // the direction vector along which the intersecting object must move to resolve the collision
+	Vector2 mPointOnPlane; // the contact point where the collision is detected
 };
 
 struct CoolCube
