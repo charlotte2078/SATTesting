@@ -17,10 +17,11 @@ struct Vector2
 	float y;
 
 	void Normalise();
+	void Reverse();
 	float Length() const;
 	Vector2 Subtract(const Vector2& OtherVec) const;
 	float DotProduct(const Vector2& OtherVec) const;
-	Vector2 PerpendicularVector();
+	Vector2 PerpendicularVector() const;
 };
 
 // This is for regular polygons for now.
@@ -268,6 +269,13 @@ void Vector2::Normalise()
 	y /= Size;
 }
 
+// Swaps the direction of the vector
+void Vector2::Reverse()
+{
+	x = -x;
+	y = -y;
+}
+
 // Returns the length of the vector.
 float Vector2::Length() const
 {
@@ -287,7 +295,7 @@ float Vector2::DotProduct(const Vector2& OtherVec) const
 }
 
 // Returns a vector perpendicular to the current vector (clockwise)
-Vector2 Vector2::PerpendicularVector()
+Vector2 Vector2::PerpendicularVector() const
 {
 	return Vector2(-(this->y), this->x);
 }
@@ -535,17 +543,20 @@ bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Sha
 	GetMinMaxVertexOnAxisShape(Axis, First, Min1, Max1);
 	GetMinMaxVertexOnAxisShape(Axis, Second, Min2, Max2);
 
-	// Overlap test - first way (A < C AND B > C)
-	if (Min1 <= Min2 && Max1 >= Min2)
+	// Overlap test 
+	// First way (A < C AND B > C)
+	// Second way (C < A AND D > A)
+	if ((Min1 <= Min2 && Max1 >= Min2) || (Min2 <= Min1 && Max2 >= Min1))
 	{
+		// If they are overlapping, update collision data.
 		Data.UpdateData(Axis, Min1, Max1, Min2, Max2);
-		return true;
-	}
+		
+		Vector2 NormalDirection(First.mCentre->GetX() - Second.mCentre->GetX(), First.mCentre->GetZ() - Second.mCentre->GetZ());
+		if (NormalDirection.DotProduct(Data.mNormal) < 0.0f)
+		{
+			Data.mNormal.Reverse();
+		}
 
-	// Overlap test - second way (C < A AND D > A)
-	if (Min2 <= Min1 && Max2 >= Min1)
-	{
-		Data.UpdateData(Axis, Min1, Max1, Min2, Max2);
 		return true;
 	}
 
