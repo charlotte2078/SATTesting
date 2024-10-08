@@ -18,8 +18,10 @@ struct Vector2
 
 	void Normalise();
 	void Reverse();
+	Vector2 MultiplyScalar(const float& k) const;
 	float Length() const;
 	Vector2 Subtract(const Vector2& OtherVec) const;
+	Vector2 Add(const Vector2& OtherVec) const;
 	float DotProduct(const Vector2& OtherVec) const;
 	Vector2 PerpendicularVector() const;
 };
@@ -35,6 +37,18 @@ struct Shape
 	void InitialiseShape(Mesh* DummyMesh, Mesh* CornerMesh, const int NumSides, const float SideLength);
 	void UpdateVerticesPosition();
 	void UpdateAxes();
+};
+
+struct Circle
+{
+	Model* mCentre;
+	float mRadius;
+	Vector2 mCentrePosition;
+	Vector2 mAxis;
+
+	void InitialiseCircle(Mesh* CentreMesh, const float Radius);
+	void UpdateCentrePos();
+	void UpdateAxis(Shape& Poly);
 };
 
 struct Square
@@ -79,6 +93,11 @@ bool TwoShapesSAT(Shape& First, Shape& Second, CollisionData& Data);
 bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second, CollisionData& Data);
 void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& Min, float& Max);
 
+// SAT for Circles prototypes
+bool ShapeToCircleSAT(Shape& FirstPolygon, Circle& SecondCircle, CollisionData& Data);
+bool CheckCollisionAxisShapeCircle(const Vector2& Axis, const Shape& Poly, const Circle& Circ, CollisionData& Data);
+void GetMinMaxVertexOnAxisCircle(const Vector2& Axis, const Circle& Circ, float& Min, float& Max);
+
 int main()
 {
 	// Create a 3D engine (using TL11 engine here) and open a window for it
@@ -113,7 +132,7 @@ int main()
 
 	// Cube test
 	Shape Test;
-	Test.InitialiseShape(BulletMesh, BulletMesh, 4, 10.0f);
+	Test.InitialiseShape(BulletMesh, BulletMesh, 3, 10.0f);
 	Test.mCentre->SetPosition(-50.0f, 0.0f, 0.0f);
 
 	Shape Test2;
@@ -122,7 +141,7 @@ int main()
 
 	// shape test
 	Shape Pentagon;
-	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 4, 15.0f);
+	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 15.0f);
 
 	MyCamera->AttachToParent(Pentagon.mCentre);
 
@@ -177,8 +196,8 @@ int main()
 		//}
 
 		//// Rotate the two other polygons
-		//Test.mCentre->RotateY(DeltaTime*RotateSpeed);
-		//Test2.mCentre->RotateY(DeltaTime * RotateSpeed);
+		Test.mCentre->RotateY(DeltaTime*RotateSpeed);
+		Test2.mCentre->RotateY(DeltaTime * RotateSpeed);
 
 		// Shape control - rotate
 		if (myEngine->KeyHeld(Key_E))
@@ -276,6 +295,11 @@ void Vector2::Reverse()
 	y = -y;
 }
 
+Vector2 Vector2::MultiplyScalar(const float& k) const
+{
+	return Vector2(k*x, k*y);
+}
+
 // Returns the length of the vector.
 float Vector2::Length() const
 {
@@ -286,6 +310,11 @@ float Vector2::Length() const
 Vector2 Vector2::Subtract(const Vector2& OtherVec) const
 {
 	return Vector2((x - OtherVec.x), (y - OtherVec.y));
+}
+
+Vector2 Vector2::Add(const Vector2& OtherVec) const
+{
+	return Vector2(x + OtherVec.x, y + OtherVec.y);
 }
 
 // Returns the dot product between the two vectors.
@@ -586,10 +615,41 @@ void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& 
 	}
 }
 
+bool ShapeToCircleSAT(Shape& FirstPolygon, Circle& SecondCircle, CollisionData& Data)
+{
+	// Udpate vertices positions of polygon and centre position of circle
+	FirstPolygon.UpdateVerticesPosition();
+	SecondCircle.UpdateCentrePos();
+
+	// Update axes of polygon
+	FirstPolygon.UpdateAxes();
+
+	// Check each axis for collision. If any return false then there is no collision.
+	for (int i = 0; i < FirstPolygon.mAxes.size(); i++)
+	{
+		if (!CheckCollisionAxisShapeCircle(FirstPolygon.mAxes.at(i), FirstPolygon, SecondCircle, Data))
+		{
+			return false;
+		}
+	}
+
+	// Update axis of circle
+	SecondCircle.UpdateAxis(FirstPolygon);
+
+	// Check axis for collision
+	if (!CheckCollisionAxisShapeCircle(SecondCircle.mAxis, FirstPolygon, SecondCircle, Data))
+	{
+		return false;
+	}
+
+	// Must be colliding if reach this point!
+	return true;
+}
+
 void CollisionData::InitialiseData()
 {
-	mPenetration = 1000.0f; // Initialise to a large number so we find correct minimum
-	mNormal = { 1.0f, 0.0f };
+	mPenetration = FLT_MAX; // Initialise to a large number so we find correct minimum
+	mNormal = { 0.0f, 0.0f };
 	//mPointOnPlane = { 0.0f, 0.0f };
 }
 
@@ -606,5 +666,89 @@ void CollisionData::UpdateData(const Vector2& Axis, const float& Min1, const flo
 	{
 		mPenetration = AxisDepth;
 		mNormal = Axis;
+	}
+}
+
+void Circle::InitialiseCircle(Mesh* CentreMesh, const float Radius)
+{
+	mCentre = CentreMesh->CreateModel();
+	mRadius = Radius;
+	mCentrePosition = { 0.0f, 0.0f };
+}
+
+void Circle::UpdateCentrePos()
+{
+	mCentrePosition.x = mCentre->GetX();
+	mCentrePosition.y = mCentre->GetZ();
+}
+
+// Axis to use for a circle is from the centre of the circle to the closest point on the polygon.
+void Circle::UpdateAxis(Shape& Poly)
+{
+	float MinDist = FLT_MAX;
+	int ClosestIndex = -1;
+
+	for (int i = 0; i < Poly.mVerticesPositions.size(); i++)
+	{
+		float CurrentDist = (Poly.mVerticesPositions.at(i).Subtract(mCentrePosition)).Length();
+
+		if (CurrentDist < MinDist)
+		{
+			MinDist = CurrentDist;
+			ClosestIndex = i;
+		}
+	}
+
+	mAxis = Poly.mVerticesPositions.at(ClosestIndex).Subtract(mCentrePosition);
+	mAxis.Normalise();
+}
+
+// Using this video for outline of implementation https://youtu.be/vWs33LVrs74?si=OyFbAbT5qoq8Um0w
+bool CheckCollisionAxisShapeCircle(const Vector2& Axis, const Shape& Poly, const Circle& Circ, CollisionData& Data)
+{
+	// point A = min on shape 1, point B = max on shape 1.
+	// point C = min on shape 2, point D = max on shape 2.
+
+	// get A,B,C,D
+	float Min1, Max1, Min2, Max2;
+	GetMinMaxVertexOnAxisShape(Axis, Poly, Min1, Max1);
+	GetMinMaxVertexOnAxisCircle(Axis, Circ, Min2, Max2);
+
+	// Overlap test 
+	// First way (A < C AND B > C)
+	// Second way (C < A AND D > A)
+	if ((Min1 <= Min2 && Max1 >= Min2) || (Min2 <= Min1 && Max2 >= Min1))
+	{
+		// If they are overlapping, update collision data.
+		Data.UpdateData(Axis, Min1, Max1, Min2, Max2);
+
+		Vector2 NormalDirection(Poly.mCentre->GetX() - Circ.mCentre->GetX(), Poly.mCentre->GetZ() - Circ.mCentre->GetZ());
+		if (NormalDirection.DotProduct(Data.mNormal) < 0.0f)
+		{
+			Data.mNormal.Reverse();
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+void GetMinMaxVertexOnAxisCircle(const Vector2& Axis, const Circle& Circ, float& Min, float& Max)
+{
+	Vector2 RadiusAlongAxis = Axis.MultiplyScalar(Circ.mRadius);
+
+	Vector2 MaxPoint = Circ.mCentrePosition.Add(RadiusAlongAxis);
+	Vector2 MinPoint = Circ.mCentrePosition.Subtract(RadiusAlongAxis);
+
+	Max = MaxPoint.DotProduct(Axis);
+	Min = MinPoint.DotProduct(Axis);
+
+	// Check values are correct way around, swap if not.
+	if (Min > Max)
+	{
+		float temp = Min;
+		Min = Max;
+		Max = temp;
 	}
 }
