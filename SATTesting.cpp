@@ -3,6 +3,7 @@
 #include "TL-Engine11.h" // TL-Engine11 include file and namespace
 
 #include <vector>
+#include <iostream> // For debug to console
 
 using namespace tle;
 
@@ -54,7 +55,9 @@ struct CollisionData
 {
 	float mPenetration; // minimum distance along the normal the intersecting object must move
 	Vector2 mNormal; // the direction vector along which the intersecting object must move to resolve the collision
-	Vector2 mPointOnPlane; // the contact point where the collision is detected
+	//Vector2 mPointOnPlane; // the contact point where the collision is detected
+
+	void InitialiseData();
 };
 
 struct CoolCube
@@ -69,8 +72,8 @@ bool CheckCollisionAxisSquares(const Vector2& Axis, const Square& Sq1, const Squ
 void GetMinMaxVertexOnAxisSquare(const Vector2& Axis, const Square& Sq, float& Min, float& Max);
 
 // SAT for Shapes function prototypes
-bool TwoShapesSAT(Shape& First, Shape& Second);
-bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second);
+bool TwoShapesSAT(Shape& First, Shape& Second, CollisionData& Data);
+bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second, CollisionData& Data);
 void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& Min, float& Max);
 
 int main()
@@ -117,6 +120,8 @@ int main()
 	// shape test
 	Shape Pentagon;
 	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 15.0f);
+
+	MyCamera->AttachToParent(Pentagon.mCentre);
 
 	// The main game loop, repeat until engine is stopped
 	while (myEngine->IsRunning())
@@ -196,11 +201,21 @@ int main()
 			Pentagon.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
 		}
 
+		// Data for collision
+		CollisionData ColData;
+		ColData.InitialiseData();
+
 		// Check collision - First square and shape
-		if (TwoShapesSAT(Pentagon, Test))
+		if (TwoShapesSAT(Pentagon, Test, ColData))
 		{
 			Test.mCentre->SetSkin("RedBall.jpg");
 			Pentagon.mCentre->SetSkin("RedBall.jpg");
+
+			// Resolve collision
+			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+
+			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
 		}
 		else
 		{
@@ -209,10 +224,16 @@ int main()
 		}
 
 		// Check collision - Second square and shape
-		if (TwoShapesSAT(Pentagon, Test2))
+		if (TwoShapesSAT(Pentagon, Test2, ColData))
 		{
 			Test2.mCentre->SetSkin("RedBall.jpg");
 			Pentagon.mCentre->SetSkin("RedBall.jpg");
+
+			// Resolve collision
+			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+
+			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
 		}
 		else
 		{
@@ -455,7 +476,7 @@ void Shape::UpdateAxes()
 }
 
 
-bool TwoShapesSAT(Shape& First, Shape& Second)
+bool TwoShapesSAT(Shape& First, Shape& Second, CollisionData& Data)
 {
 	// Udpate vertices positions of both squares
 	First.UpdateVerticesPosition();
@@ -467,7 +488,7 @@ bool TwoShapesSAT(Shape& First, Shape& Second)
 	// Check each axis for collision. If any return false then there is no collision.
 	for (int i = 0; i < First.mAxes.size(); i++)
 	{
-		if (!CheckCollisionAxisShapes(First.mAxes.at(i), First, Second))
+		if (!CheckCollisionAxisShapes(First.mAxes.at(i), First, Second, Data))
 		{
 			return false;
 		}
@@ -479,7 +500,7 @@ bool TwoShapesSAT(Shape& First, Shape& Second)
 	// Check each axis for collision.
 	for (int i = 0; i < Second.mAxes.size(); i++)
 	{
-		if (!CheckCollisionAxisShapes(Second.mAxes.at(i), First, Second))
+		if (!CheckCollisionAxisShapes(Second.mAxes.at(i), First, Second, Data))
 		{
 			return false;
 		}
@@ -491,7 +512,7 @@ bool TwoShapesSAT(Shape& First, Shape& Second)
 
 // Using this link for the outline of the implementation. 
 // https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics4collisiondetection/2017%20Tutorial%204%20-%20Collision%20Detection.pdf
-bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second)
+bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second, CollisionData& Data)
 {
 	// point A = min on shape 1, point B = max on shape 1.
 	// point C = min on shape 2, point D = max on shape 2.
@@ -500,6 +521,13 @@ bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Sha
 	float A, B, C, D;
 	GetMinMaxVertexOnAxisShape(Axis, First, A, B);
 	GetMinMaxVertexOnAxisShape(Axis, Second, C, D);
+
+	// Check collision data (first shape only)
+	if (A < Data.mPenetration)
+	{
+		Data.mPenetration = A;
+		Data.mNormal = Axis;
+	}
 
 	// Overlap test - first way (A < C AND B > C)
 	if (A <= C && B >= C)
@@ -537,4 +565,11 @@ void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& 
 			Max = Projection;
 		}
 	}
+}
+
+void CollisionData::InitialiseData()
+{
+	mPenetration = 1000.0f; // Initialise to a large number so we find correct minimum
+	mNormal = { 1.0f, 0.0f };
+	//mPointOnPlane = { 0.0f, 0.0f };
 }
