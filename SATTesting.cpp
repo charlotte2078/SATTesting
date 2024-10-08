@@ -59,6 +59,7 @@ struct CollisionData
 	//Vector2 mPointOnPlane; // the contact point where the collision is detected
 
 	void InitialiseData();
+	void UpdateData(const Vector2& Axis, const float& Min1, const float& Max1, const float& Min2, const float& Max2);
 };
 
 struct CoolCube
@@ -120,7 +121,7 @@ int main()
 
 	// shape test
 	Shape Pentagon;
-	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 15.0f);
+	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 4, 15.0f);
 
 	MyCamera->AttachToParent(Pentagon.mCentre);
 
@@ -174,9 +175,9 @@ int main()
 		//	Test2.CentreDummy->SetSkin("Grass1.jpg");
 		//}
 
-		// Rotate the two other polygons
-		Test.mCentre->RotateY(DeltaTime*RotateSpeed);
-		Test2.mCentre->RotateY(DeltaTime * RotateSpeed);
+		//// Rotate the two other polygons
+		//Test.mCentre->RotateY(DeltaTime*RotateSpeed);
+		//Test2.mCentre->RotateY(DeltaTime * RotateSpeed);
 
 		// Shape control - rotate
 		if (myEngine->KeyHeld(Key_E))
@@ -216,11 +217,11 @@ int main()
 			Test.mCentre->SetSkin("RedBall.jpg");
 			Pentagon.mCentre->SetSkin("RedBall.jpg");
 
-			//// Resolve collision
-			//Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-			//Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+			// Resolve collision
+			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
 
-			//std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
 		}
 		else
 		{
@@ -234,11 +235,11 @@ int main()
 			Test2.mCentre->SetSkin("RedBall.jpg");
 			Pentagon.mCentre->SetSkin("RedBall.jpg");
 
-			//// Resolve collision
-			//Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-			//Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+			// Resolve collision
+			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
 
-			//std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
 		}
 		else
 		{
@@ -530,26 +531,21 @@ bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Sha
 	// point C = min on shape 2, point D = max on shape 2.
 
 	// get A,B,C,D
-	float A, B, C, D;
-	GetMinMaxVertexOnAxisShape(Axis, First, A, B);
-	GetMinMaxVertexOnAxisShape(Axis, Second, C, D);
-
-	// Check collision data (first shape only)
-	if (A < Data.mPenetration)
-	{
-		Data.mPenetration = A;
-		Data.mNormal = Axis;
-	}
+	float Min1, Max1, Min2, Max2;
+	GetMinMaxVertexOnAxisShape(Axis, First, Min1, Max1);
+	GetMinMaxVertexOnAxisShape(Axis, Second, Min2, Max2);
 
 	// Overlap test - first way (A < C AND B > C)
-	if (A <= C && B >= C)
+	if (Min1 <= Min2 && Max1 >= Min2)
 	{
+		Data.UpdateData(Axis, Min1, Max1, Min2, Max2);
 		return true;
 	}
 
 	// Overlap test - second way (C < A AND D > A)
-	if (C <= A && D >= A)
+	if (Min2 <= Min1 && Max2 >= Min1)
 	{
+		Data.UpdateData(Axis, Min1, Max1, Min2, Max2);
 		return true;
 	}
 
@@ -584,4 +580,20 @@ void CollisionData::InitialiseData()
 	mPenetration = 1000.0f; // Initialise to a large number so we find correct minimum
 	mNormal = { 1.0f, 0.0f };
 	//mPointOnPlane = { 0.0f, 0.0f };
+}
+
+// With help from https://youtu.be/SUyG3aV_vpM?si=cCNq6pM6ntW2Tt8
+void CollisionData::UpdateData(const Vector2& Axis, const float& Min1, const float& Max1, const float& Min2, const float& Max2)
+{
+	float AxisDepth = Max2 - Min1;
+	if ((Max1 - Min2) < AxisDepth)
+	{
+		AxisDepth = Max1 - Min2;
+	}
+
+	if (AxisDepth < mPenetration)
+	{
+		mPenetration = AxisDepth;
+		mNormal = Axis;
+	}
 }
