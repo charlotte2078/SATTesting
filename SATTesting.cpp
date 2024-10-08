@@ -174,6 +174,10 @@ int main()
 		//	Test2.CentreDummy->SetSkin("Grass1.jpg");
 		//}
 
+		// Rotate the two other polygons
+		Test.mCentre->RotateY(DeltaTime*RotateSpeed);
+		Test2.mCentre->RotateY(DeltaTime * RotateSpeed);
+
 		// Shape control - rotate
 		if (myEngine->KeyHeld(Key_E))
 		{
