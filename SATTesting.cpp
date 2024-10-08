@@ -20,6 +20,7 @@ struct Vector2
 	float Length() const;
 	Vector2 Subtract(const Vector2& OtherVec) const;
 	float DotProduct(const Vector2& OtherVec) const;
+	Vector2 PerpendicularVector();
 };
 
 // This is for regular polygons for now.
@@ -211,11 +212,11 @@ int main()
 			Test.mCentre->SetSkin("RedBall.jpg");
 			Pentagon.mCentre->SetSkin("RedBall.jpg");
 
-			// Resolve collision
-			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+			//// Resolve collision
+			//Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+			//Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
 
-			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+			//std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
 		}
 		else
 		{
@@ -229,11 +230,11 @@ int main()
 			Test2.mCentre->SetSkin("RedBall.jpg");
 			Pentagon.mCentre->SetSkin("RedBall.jpg");
 
-			// Resolve collision
-			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+			//// Resolve collision
+			//Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+			//Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
 
-			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+			//std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
 		}
 		else
 		{
@@ -278,6 +279,12 @@ Vector2 Vector2::Subtract(const Vector2& OtherVec) const
 float Vector2::DotProduct(const Vector2& OtherVec) const
 {
 	return (x * OtherVec.x + y * OtherVec.y);
+}
+
+// Returns a vector perpendicular to the current vector (clockwise)
+Vector2 Vector2::PerpendicularVector()
+{
+	return Vector2(-(this->y), this->x);
 }
 
 // Sets up the square
@@ -457,7 +464,7 @@ void Shape::UpdateVerticesPosition()
 	}
 }
 
-// Axes are one point minus another point. There will be the same number of axes as vertices.
+// Axes are the normals to each side of the shape. There will be the same number of axes as vertices.
 void Shape::UpdateAxes()
 {
 	for (int i = 0; i < mVertices.size(); i++)
@@ -472,6 +479,7 @@ void Shape::UpdateAxes()
 		}
 
 		mAxes.at(i).Normalise();
+		mAxes.at(i) = mAxes.at(i).PerpendicularVector();
 	}
 }
 
