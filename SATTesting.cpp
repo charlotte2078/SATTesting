@@ -650,6 +650,10 @@ void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& 
 	}
 }
 
+// Determines if a Shape and a Circle are colliding. Returns true if they are.
+// Inputs: Shape, Circle, Collision data. All passed by reference as their axes and vertices will be updated.
+// Outputs: Returns trueif Shape and Circle are colliding.
+// Collision Data is updated with the normal pointing from the Circle to the Shape.
 bool ShapeToCircleSAT(Shape& FirstPolygon, Circle& SecondCircle, CollisionData& Data)
 {
 	// Udpate vertices positions of polygon and centre position of circle
@@ -681,13 +685,15 @@ bool ShapeToCircleSAT(Shape& FirstPolygon, Circle& SecondCircle, CollisionData& 
 	return true;
 }
 
+// Initialises Data attributes.
 void CollisionData::InitialiseData()
 {
 	mPenetration = FLT_MAX; // Initialise to a large number so we find correct minimum
 	mNormal = { 0.0f, 0.0f };
-	//mPointOnPlane = { 0.0f, 0.0f };
 }
 
+// Checks if the new penetration is smaller than the current penetration. If it is, new penetration replaces current penetration.
+// Axis is also stored.
 // With help from https://youtu.be/SUyG3aV_vpM?si=cCNq6pM6ntW2Tt8
 void CollisionData::UpdateData(const Vector2& Axis, const float& Min1, const float& Max1, const float& Min2, const float& Max2)
 {
@@ -704,6 +710,8 @@ void CollisionData::UpdateData(const Vector2& Axis, const float& Min1, const flo
 	}
 }
 
+// Creates circle model with passed in mesh. Changes radius to passed in value.
+// Initialises centre position to (0.0f, 0.0f)
 void Circle::InitialiseCircle(Mesh* CentreMesh, const float Radius)
 {
 	mCentre = CentreMesh->CreateModel();
@@ -711,6 +719,7 @@ void Circle::InitialiseCircle(Mesh* CentreMesh, const float Radius)
 	mCentrePosition = { 0.0f, 0.0f };
 }
 
+// Updates CentrePosition with current world position.
 void Circle::UpdateCentrePos()
 {
 	mCentrePosition.x = mCentre->GetX();
@@ -755,6 +764,7 @@ bool CheckCollisionAxisShapeCircle(const Vector2& Axis, const Shape& Poly, const
 	if ((Min1 <= Min2 && Max1 >= Min2) || (Min2 <= Min1 && Max2 >= Min1))
 	{
 		// If they are overlapping, update collision data.
+		// The normal points from the circle to the shape.
 		Data.UpdateData(Axis, Min1, Max1, Min2, Max2);
 
 		Vector2 NormalDirection(Poly.mCentre->GetX() - Circ.mCentre->GetX(), Poly.mCentre->GetZ() - Circ.mCentre->GetZ());
