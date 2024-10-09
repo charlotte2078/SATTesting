@@ -115,8 +115,8 @@ int main()
 	Mesh* FloorMesh = myEngine->LoadMesh("Floor.fbx");
 	Model* Floor = FloorMesh->CreateModel();
 
-	/*Mesh* SphereMesh = myEngine->LoadMesh("Sphere.fbx");
-	Model* Sphere = SphereMesh->CreateModel();*/
+	Mesh* SphereMesh = myEngine->LoadMesh("Sphere.fbx");
+	//Model* Sphere = SphereMesh->CreateModel();
 
 	Mesh* BulletMesh = myEngine->LoadMesh("Bullet.x");
 	/*Model* Bullet = BulletMesh->CreateModel();*/
@@ -139,11 +139,15 @@ int main()
 	Test2.InitialiseShape(BulletMesh, BulletMesh, 4, 20.0f);
 	Test2.mCentre->SetPosition(50.0f, 0.0f, 0.0f);
 
-	// shape test
-	Shape Pentagon;
-	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 15.0f);
+	//// shape test
+	//Shape Pentagon;
+	//Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 15.0f);
 
-	MyCamera->AttachToParent(Pentagon.mCentre);
+	// Circle test
+	Circle MyCircle;
+	MyCircle.InitialiseCircle(SphereMesh, 10.0f);
+
+	MyCamera->AttachToParent(MyCircle.mCentre);
 
 	// The main game loop, repeat until engine is stopped
 	while (myEngine->IsRunning())
@@ -196,76 +200,107 @@ int main()
 		//}
 
 		//// Rotate the two other polygons
-		Test.mCentre->RotateY(DeltaTime*RotateSpeed);
-		Test2.mCentre->RotateY(DeltaTime * RotateSpeed);
+		/*Test.mCentre->RotateY(DeltaTime*RotateSpeed);
+		Test2.mCentre->RotateY(DeltaTime * RotateSpeed);*/
 
 		// Shape control - rotate
 		if (myEngine->KeyHeld(Key_E))
 		{
-			Pentagon.mCentre->RotateY(DeltaTime * RotateSpeed);
+			MyCircle.mCentre->RotateY(DeltaTime * RotateSpeed);
 		}
 		if (myEngine->KeyHeld(Key_Q))
 		{
-			Pentagon.mCentre->RotateY(-DeltaTime * RotateSpeed);
+			MyCircle.mCentre->RotateY(-DeltaTime * RotateSpeed);
 		}
 
 		// Square control - translate
 		if (myEngine->KeyHeld(Key_W))
 		{
-			Pentagon.mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
+			MyCircle.mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_S))
 		{
-			Pentagon.mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
+			MyCircle.mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_A))
 		{
-			Pentagon.mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
+			MyCircle.mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
 		}
 		if (myEngine->KeyHeld(Key_D))
 		{
-			Pentagon.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
+			MyCircle.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
 		}
 
 		// Data for collision
 		CollisionData ColData;
 		ColData.InitialiseData();
 
-		// Check collision - First square and shape
-		if (TwoShapesSAT(Pentagon, Test, ColData))
+		// Check circle collision with shapes
+		if (ShapeToCircleSAT(Test, MyCircle, ColData))
 		{
 			Test.mCentre->SetSkin("RedBall.jpg");
-			Pentagon.mCentre->SetSkin("RedBall.jpg");
+			MyCircle.mCentre->SetSkin("RedBall.jpg");
 
 			// Resolve collision
-			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
-
-			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+			MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
+			MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
 		}
 		else
 		{
 			Test.mCentre->SetSkin("Grass1.jpg");
-			Pentagon.mCentre->SetSkin("Grass1.jpg");
+			MyCircle.mCentre->SetSkin("Grass1.jpg");
 		}
 
-		// Check collision - Second square and shape
-		if (TwoShapesSAT(Pentagon, Test2, ColData))
+		if (ShapeToCircleSAT(Test2, MyCircle, ColData))
 		{
 			Test2.mCentre->SetSkin("RedBall.jpg");
-			Pentagon.mCentre->SetSkin("RedBall.jpg");
+			MyCircle.mCentre->SetSkin("RedBall.jpg");
 
 			// Resolve collision
-			Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-			Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
-
-			std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+			MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
+			MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
 		}
 		else
 		{
 			Test2.mCentre->SetSkin("Grass1.jpg");
-			Pentagon.mCentre->SetSkin("Grass1.jpg");
+			MyCircle.mCentre->SetSkin("Grass1.jpg");
 		}
+
+		//// Check collision - First square and shape
+		//if (TwoShapesSAT(Pentagon, Test, ColData))
+		//{
+		//	Test.mCentre->SetSkin("RedBall.jpg");
+		//	Pentagon.mCentre->SetSkin("RedBall.jpg");
+
+		//	// Resolve collision
+		//	Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+		//	Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+
+		//	std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+		//}
+		//else
+		//{
+		//	Test.mCentre->SetSkin("Grass1.jpg");
+		//	Pentagon.mCentre->SetSkin("Grass1.jpg");
+		//}
+
+		//// Check collision - Second square and shape
+		//if (TwoShapesSAT(Pentagon, Test2, ColData))
+		//{
+		//	Test2.mCentre->SetSkin("RedBall.jpg");
+		//	Pentagon.mCentre->SetSkin("RedBall.jpg");
+
+		//	// Resolve collision
+		//	Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+		//	Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+
+		//	std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
+		//}
+		//else
+		//{
+		//	Test2.mCentre->SetSkin("Grass1.jpg");
+		//	Pentagon.mCentre->SetSkin("Grass1.jpg");
+		//}
 
 		// Stop if the Escape key is pressed
 		if (myEngine->KeyHit(Key_Escape))
