@@ -77,12 +77,6 @@ struct CollisionData
 	void UpdateData(const Vector2& Axis, const float& Min1, const float& Max1, const float& Min2, const float& Max2);
 };
 
-struct CoolCube
-{
-	Model* CubeModel;
-	Model* Vertices[];
-};
-
 // SAT for Squares function prototype
 bool TwoSquaresSAT(Square& Sq1, Square& Sq2);
 bool CheckCollisionAxisSquares(const Vector2& Axis, const Square& Sq1, const Square& Sq2);
