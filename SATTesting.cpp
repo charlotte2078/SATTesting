@@ -233,7 +233,6 @@ int main()
 		if (ShapeToCircleSAT(Test, MyCircle, ColData))
 		{
 			Test.mCentre->SetSkin("RedBall.jpg");
-			MyCircle.mCentre->SetSkin("RedBall.jpg");
 
 			// Resolve collision
 			MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
@@ -242,13 +241,11 @@ int main()
 		else
 		{
 			Test.mCentre->SetSkin("Grass1.jpg");
-			MyCircle.mCentre->SetSkin("Grass1.jpg");
 		}
 
 		if (ShapeToCircleSAT(Test2, MyCircle, ColData))
 		{
 			Test2.mCentre->SetSkin("RedBall.jpg");
-			MyCircle.mCentre->SetSkin("RedBall.jpg");
 
 			// Resolve collision
 			MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
@@ -257,7 +254,6 @@ int main()
 		else
 		{
 			Test2.mCentre->SetSkin("Grass1.jpg");
-			MyCircle.mCentre->SetSkin("Grass1.jpg");
 		}
 
 		//// Check collision - First square and shape
