@@ -124,14 +124,32 @@ int main()
 	const float MoveSpeed = 10.0f;
 	const float RotateSpeed = 60.0f;
 
-	// Cube test
-	Shape Test;
-	Test.InitialiseShape(BulletMesh, BulletMesh, 3, 10.0f);
-	Test.mCentre->SetPosition(-50.0f, 0.0f, 0.0f);
+	// Array of shapes to test against
+	const int NumShapes = 10;
+	Shape ShapesArray[NumShapes];
+	for (int i = 0; i < NumShapes; i++)
+	{
+		ShapesArray[i].InitialiseShape(BulletMesh, BulletMesh, i + 3, 10.0f);
+		ShapesArray[i].mCentre->SetPosition(i * 40.0f, 0.0f, 0.0f);
+	}
 
-	Shape Test2;
-	Test2.InitialiseShape(BulletMesh, BulletMesh, 4, 20.0f);
-	Test2.mCentre->SetPosition(50.0f, 0.0f, 0.0f);
+	// Array of circles to test spheres against
+	const int NumCircles = 3;
+	Circle CirclesArray[NumCircles];
+	for (int i = 0; i < NumCircles; i++)
+	{
+		CirclesArray[i].InitialiseCircle(SphereMesh, 10.0f);
+		CirclesArray[i].mCentre->SetPosition(i * 30.0f, 0.0f, 0.0f);
+	}
+
+	//// Cube test
+	//Shape Test;
+	//Test.InitialiseShape(BulletMesh, BulletMesh, 3, 10.0f);
+	//Test.mCentre->SetPosition(-50.0f, 0.0f, 0.0f);
+
+	//Shape Test2;
+	//Test2.InitialiseShape(BulletMesh, BulletMesh, 4, 20.0f);
+	//Test2.mCentre->SetPosition(50.0f, 0.0f, 0.0f);
 
 	//// shape test
 	//Shape Pentagon;
@@ -229,38 +247,56 @@ int main()
 		CollisionData ColData;
 		ColData.InitialiseData();
 
-		// Check circle collision with shapes
-		if (ShapeToCircleSAT(Test, MyCircle, ColData))
+		// Circle collision with shapes array
+		for (int i = 0; i < NumShapes; i++)
 		{
-			Test.mCentre->SetSkin("RedBall.jpg");
+			if (ShapeToCircleSAT(ShapesArray[i], MyCircle, ColData))
+			{
+				ShapesArray[i].mCentre->SetSkin("RedBall.jpg");
 
-			// Resolve collision
-			MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
-			MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
-		}
-		else
-		{
-			Test.mCentre->SetSkin("Grass1.jpg");
+				// Resolve collision
+				MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
+				MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
+			}
+			else
+			{
+				ShapesArray[i].mCentre->SetSkin("Grass1.jpg");
+			}
+
+			ColData.InitialiseData();
 		}
 
-		if (ShapeToCircleSAT(Test2, MyCircle, ColData))
-		{
-			Test2.mCentre->SetSkin("RedBall.jpg");
+		//// Check circle collision with shapes
+		//if (ShapeToCircleSAT(Test, MyCircle, ColData))
+		//{
+		//	Test.mCentre->SetSkin("RedBall.jpg");
 
-			// Resolve collision
-			MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
-			MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
-		}
-		else
-		{
-			Test2.mCentre->SetSkin("Grass1.jpg");
-		}
+		//	// Resolve collision
+		//	MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
+		//	MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
+		//}
+		//else
+		//{
+		//	Test.mCentre->SetSkin("Grass1.jpg");
+		//}
+
+		//if (ShapeToCircleSAT(Test2, MyCircle, ColData))
+		//{
+		//	Test2.mCentre->SetSkin("RedBall.jpg");
+
+		//	// Resolve collision
+		//	MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
+		//	MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
+		//}
+		//else
+		//{
+		//	Test2.mCentre->SetSkin("Grass1.jpg");
+		//}
 
 		//// Check collision - First square and shape
 		//if (TwoShapesSAT(Pentagon, Test, ColData))
 		//{
 		//	Test.mCentre->SetSkin("RedBall.jpg");
-		//	Pentagon.mCentre->SetSkin("RedBall.jpg");
 
 		//	// Resolve collision
 		//	Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
@@ -271,14 +307,12 @@ int main()
 		//else
 		//{
 		//	Test.mCentre->SetSkin("Grass1.jpg");
-		//	Pentagon.mCentre->SetSkin("Grass1.jpg");
 		//}
 
 		//// Check collision - Second square and shape
 		//if (TwoShapesSAT(Pentagon, Test2, ColData))
 		//{
 		//	Test2.mCentre->SetSkin("RedBall.jpg");
-		//	Pentagon.mCentre->SetSkin("RedBall.jpg");
 
 		//	// Resolve collision
 		//	Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
@@ -289,7 +323,6 @@ int main()
 		//else
 		//{
 		//	Test2.mCentre->SetSkin("Grass1.jpg");
-		//	Pentagon.mCentre->SetSkin("Grass1.jpg");
 		//}
 
 		// Stop if the Escape key is pressed
