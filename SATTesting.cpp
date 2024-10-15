@@ -337,8 +337,9 @@ int main()
 		}
 
 		// Show instructions text on screen
-		MyFont->Draw("Press space to toggle shapes rotating", 10, 40, Black);
-		MyFont->Draw("Press left click to cycle the shape you control", 10, 80, Black);
+		MyFont->Draw("Press SPACE to toggle shapes rotating", 10, 10, Black);
+		MyFont->Draw("Press LEFT CLICK to cycle the shape you control", 10, 50, Black);
+		MyFont->Draw("Press ESCAPE to close the program", 10, 90, Black);
 
 		// Stop if the Escape key is pressed
 		if (myEngine->KeyHit(Key_Escape))
