@@ -7,18 +7,21 @@
 
 using namespace tle;
 
+// Global constants
 const int SquareNumCorners = 4;
 const int SquareNumAxesToCheck = 2;
 const float DegreesToRadians = 3.14159265359f / 180.0f;
+const float ShapeHiddenHeight = -10.0f;
 
-enum EShapeControl { eCircle, eTriangle, eSquare, ePentagon, eHexagon };
+// Game states
+enum EShapeControl { eCircle, eTriangle, eSquare, ePentagon, eNumShapeControl };
 bool bShapesAreSpinning = false;
 
+// Control keys
 const EKeyCode UpKey = Key_W;
 const EKeyCode DownKey = Key_S;
 const EKeyCode LeftKey = Key_A;
 const EKeyCode RightKey = Key_D;
-
 const EKeyCode SpinningToggleKey = Key_Space;
 const EKeyCode ShapeCycleKey = Mouse_LButton;
 
@@ -161,6 +164,18 @@ int main()
 	//Shape Test2;
 	//Test2.InitialiseShape(BulletMesh, BulletMesh, 4, 20.0f);
 	//Test2.mCentre->SetPosition(50.0f, 0.0f, 0.0f);
+
+	// Setup shapes for control
+	EShapeControl CurrentShapeControl = eCircle;
+
+	// Create all shapes at hidden height, except circle which is what we'll start at in control of
+	Circle ControlCircle;
+	ControlCircle.InitialiseCircle(SphereMesh, 10.0f);
+
+	for (int i = 0; i < eNumShapeControl; i++)
+	{
+
+	}
 
 	// shape test
 	Shape Pentagon;
