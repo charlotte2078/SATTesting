@@ -11,6 +11,17 @@ const int SquareNumCorners = 4;
 const int SquareNumAxesToCheck = 2;
 const float DegreesToRadians = 3.14159265359f / 180.0f;
 
+enum EShapeControl { eCircle, eTriangle, eSquare, ePentagon, eHexagon };
+bool bShapesAreSpinning = false;
+
+const EKeyCode UpKey = Key_W;
+const EKeyCode DownKey = Key_S;
+const EKeyCode LeftKey = Key_A;
+const EKeyCode RightKey = Key_D;
+
+const EKeyCode SpinningToggleKey = Key_Space;
+const EKeyCode ShapeCycleKey = Mouse_LButton;
+
 struct Vector2
 {
 	float x;
@@ -125,12 +136,12 @@ int main()
 	const float RotateSpeed = 60.0f;
 
 	// Array of shapes to test against
-	const int NumShapes = 10;
-	Shape ShapesArray[NumShapes];
-	for (int i = 0; i < NumShapes; i++)
+	const int NumBackgroundShapes = 10;
+	Shape BackgroundShapesArray[NumBackgroundShapes];
+	for (int i = 0; i < NumBackgroundShapes; i++)
 	{
-		ShapesArray[i].InitialiseShape(BulletMesh, BulletMesh, i + 3, 10.0f);
-		ShapesArray[i].mCentre->SetPosition(i * 40.0f, 0.0f, 0.0f);
+		BackgroundShapesArray[i].InitialiseShape(BulletMesh, BulletMesh, i + 3, 10.0f);
+		BackgroundShapesArray[i].mCentre->SetPosition(i * 40.0f, 0.0f, 0.0f);
 	}
 
 	// Array of circles to test spheres against
@@ -139,7 +150,7 @@ int main()
 	for (int i = 0; i < NumCircles; i++)
 	{
 		CirclesArray[i].InitialiseCircle(SphereMesh, 10.0f);
-		CirclesArray[i].mCentre->SetPosition(i * 30.0f, 0.0f, 0.0f);
+		CirclesArray[i].mCentre->SetPosition(i * 30.0f, 0.0f, 60.0f);
 	}
 
 	//// Cube test
@@ -151,15 +162,15 @@ int main()
 	//Test2.InitialiseShape(BulletMesh, BulletMesh, 4, 20.0f);
 	//Test2.mCentre->SetPosition(50.0f, 0.0f, 0.0f);
 
-	//// shape test
-	//Shape Pentagon;
-	//Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 15.0f);
+	// shape test
+	Shape Pentagon;
+	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 5.0f);
 
 	// Circle test
 	Circle MyCircle;
 	MyCircle.InitialiseCircle(SphereMesh, 10.0f);
 
-	MyCamera->AttachToParent(MyCircle.mCentre);
+	MyCamera->AttachToParent(Pentagon.mCentre);
 
 	// The main game loop, repeat until engine is stopped
 	while (myEngine->IsRunning())
@@ -170,6 +181,24 @@ int main()
 		const float DeltaTime = myEngine->FrameTime();
 
 		/**** Update your scene each frame here ****/
+
+		// Check for toggling shapes rotating.
+		if (myEngine->KeyHit(SpinningToggleKey))
+		{
+			bShapesAreSpinning = !bShapesAreSpinning;
+		}
+
+		// Spin shapes
+		if (bShapesAreSpinning)
+		{
+			// Loop through all shapes and make them rotate
+			for (int i = 0; i < NumBackgroundShapes; i++)
+			{
+				BackgroundShapesArray[i].mCentre->RotateY(RotateSpeed * DeltaTime);
+			}
+		}
+
+		// 
 
 		//// Square control - rotate
 		//if (myEngine->KeyHeld(Key_E))
@@ -248,11 +277,11 @@ int main()
 		ColData.InitialiseData();
 
 		// Circle collision with shapes array
-		for (int i = 0; i < NumShapes; i++)
+		for (int i = 0; i < NumBackgroundShapes; i++)
 		{
-			if (ShapeToCircleSAT(ShapesArray[i], MyCircle, ColData))
+			if (ShapeToCircleSAT(BackgroundShapesArray[i], MyCircle, ColData))
 			{
-				ShapesArray[i].mCentre->SetSkin("RedBall.jpg");
+				BackgroundShapesArray[i].mCentre->SetSkin("RedBall.jpg");
 
 				// Resolve collision
 				MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
@@ -260,7 +289,7 @@ int main()
 			}
 			else
 			{
-				ShapesArray[i].mCentre->SetSkin("Grass1.jpg");
+				BackgroundShapesArray[i].mCentre->SetSkin("Grass1.jpg");
 			}
 
 			ColData.InitialiseData();
@@ -355,7 +384,7 @@ void Vector2::Reverse()
 
 Vector2 Vector2::MultiplyScalar(const float& k) const
 {
-	return Vector2(k*x, k*y);
+	return Vector2(k * x, k * y);
 }
 
 // Returns the length of the vector.
@@ -637,7 +666,7 @@ bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Sha
 	{
 		// If they are overlapping, update collision data.
 		Data.UpdateData(Axis, Min1, Max1, Min2, Max2);
-		
+
 		Vector2 NormalDirection(First.mCentre->GetX() - Second.mCentre->GetX(), First.mCentre->GetZ() - Second.mCentre->GetZ());
 		if (NormalDirection.DotProduct(Data.mNormal) < 0.0f)
 		{
