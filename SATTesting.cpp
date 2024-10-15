@@ -125,8 +125,8 @@ int main()
 	myEngine->StartWindowed();
 
 	// Add default folder for meshes and other media
-	myEngine->AddMediaFolder("C:\\Users\\Public\\Documents\\TL-Engine11\\Media");
-	//myEngine->AddMediaFolder(".\\Media");
+	//myEngine->AddMediaFolder("C:\\Users\\Public\\Documents\\TL-Engine11\\Media");
+	myEngine->AddMediaFolder(".\\Media");
 
 	/**** Set up your scene here ****/
 
@@ -136,8 +136,12 @@ int main()
 	Mesh* SphereMesh = myEngine->LoadMesh("Sphere.fbx");
 	Mesh* BulletMesh = myEngine->LoadMesh("Bullet.x");
 
+	// Load font for text on screen
+	Font* MyFont = myEngine->LoadFont("Tahoma", 24);
+
 	// Create floor and Camera
 	Model* Floor = FloorMesh->CreateModel();
+	Floor->SetSkin("Uranus.jpg");
 	Camera* MyCamera = myEngine->CreateCamera(ManualCamera, 0.0f, 100.0f, 0.0f);
 	MyCamera->RotateX(90.0f);
 
@@ -331,6 +335,10 @@ int main()
 				ColData.InitialiseData();
 			}
 		}
+
+		// Show instructions text on screen
+		MyFont->Draw("Press space to toggle shapes rotating", 10, 40, Black);
+		MyFont->Draw("Press left click to cycle the shape you control", 10, 80, Black);
 
 		// Stop if the Escape key is pressed
 		if (myEngine->KeyHit(Key_Escape))
