@@ -42,7 +42,7 @@ struct Vector2
 };
 
 // This is for regular polygons for now.
-struct Shape
+struct Polygon
 {
 	Model* mCentre;
 	std::vector<Model*> mVertices;
@@ -63,7 +63,7 @@ struct Circle
 
 	void InitialiseCircle(Mesh* CentreMesh, const float Radius);
 	void UpdateCentrePos();
-	void UpdateAxis(Shape& Poly);
+	void UpdateAxis(Polygon& Poly);
 };
 
 struct Square
@@ -98,13 +98,13 @@ bool CheckCollisionAxisSquares(const Vector2& Axis, const Square& Sq1, const Squ
 void GetMinMaxVertexOnAxisSquare(const Vector2& Axis, const Square& Sq, float& Min, float& Max);
 
 // SAT for Shapes function prototypes
-bool TwoShapesSAT(Shape& First, Shape& Second, CollisionData& Data);
-bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second, CollisionData& Data);
-void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& Min, float& Max);
+bool TwoShapesSAT(Polygon& First, Polygon& Second, CollisionData& Data);
+bool CheckCollisionAxisShapes(const Vector2& Axis, const Polygon& First, const Polygon& Second, CollisionData& Data);
+void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Polygon& Shape, float& Min, float& Max);
 
 // SAT for Circles prototypes
-bool ShapeToCircleSAT(Shape& FirstPolygon, Circle& SecondCircle, CollisionData& Data);
-bool CheckCollisionAxisShapeCircle(const Vector2& Axis, const Shape& Poly, const Circle& Circ, CollisionData& Data);
+bool ShapeToCircleSAT(Polygon& FirstPolygon, Circle& SecondCircle, CollisionData& Data);
+bool CheckCollisionAxisShapeCircle(const Vector2& Axis, const Polygon& Poly, const Circle& Circ, CollisionData& Data);
 void GetMinMaxVertexOnAxisCircle(const Vector2& Axis, const Circle& Circ, float& Min, float& Max);
 
 int main()
@@ -141,7 +141,7 @@ int main()
 
 	// Array of shapes to test against
 	const int NumBackgroundShapes = 10;
-	Shape BackgroundShapesArray[NumBackgroundShapes];
+	Polygon BackgroundShapesArray[NumBackgroundShapes];
 	for (int i = 0; i < NumBackgroundShapes; i++)
 	{
 		BackgroundShapesArray[i].InitialiseShape(BulletMesh, BulletMesh, i + 3, 10.0f);
@@ -173,7 +173,7 @@ int main()
 	Circle ControlCircle;
 	ControlCircle.InitialiseCircle(SphereMesh, 10.0f);
 
-	Shape ControlShapesArray[eNumShapeControl - 1]; // -1 to skip circle
+	Polygon ControlShapesArray[eNumShapeControl - 1]; // -1 to skip circle
 
 	// Start index at 1 to skip circle
 	for (int i = 1; i < eNumShapeControl; i++)
@@ -595,7 +595,7 @@ void GetMinMaxVertexOnAxisSquare(const Vector2& Axis, const Square& Sq, float& M
 	}
 }
 
-void Shape::InitialiseShape(Mesh* DummyMesh, Mesh* CornerMesh, const int NumSides, const float SideLength)
+void Polygon::InitialiseShape(Mesh* DummyMesh, Mesh* CornerMesh, const int NumSides, const float SideLength)
 {
 	// Create centre dummy model
 	mCentre = DummyMesh->CreateModel();
@@ -621,7 +621,7 @@ void Shape::InitialiseShape(Mesh* DummyMesh, Mesh* CornerMesh, const int NumSide
 	}
 }
 
-void Shape::UpdateVerticesPosition()
+void Polygon::UpdateVerticesPosition()
 {
 	for (int i = 0; i < mVertices.size(); i++)
 	{
@@ -630,7 +630,7 @@ void Shape::UpdateVerticesPosition()
 }
 
 // Axes are the normals to each side of the shape. There will be the same number of axes as vertices.
-void Shape::UpdateAxes()
+void Polygon::UpdateAxes()
 {
 	for (int i = 0; i < mVertices.size(); i++)
 	{
@@ -649,7 +649,7 @@ void Shape::UpdateAxes()
 }
 
 
-bool TwoShapesSAT(Shape& First, Shape& Second, CollisionData& Data)
+bool TwoShapesSAT(Polygon& First, Polygon& Second, CollisionData& Data)
 {
 	// Udpate vertices positions of both squares
 	First.UpdateVerticesPosition();
@@ -685,7 +685,7 @@ bool TwoShapesSAT(Shape& First, Shape& Second, CollisionData& Data)
 
 // Using this link for the outline of the implementation. 
 // https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics4collisiondetection/2017%20Tutorial%204%20-%20Collision%20Detection.pdf
-bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Shape& Second, CollisionData& Data)
+bool CheckCollisionAxisShapes(const Vector2& Axis, const Polygon& First, const Polygon& Second, CollisionData& Data)
 {
 	// point A = min on shape 1, point B = max on shape 1.
 	// point C = min on shape 2, point D = max on shape 2.
@@ -715,7 +715,7 @@ bool CheckCollisionAxisShapes(const Vector2& Axis, const Shape& First, const Sha
 	return false;
 }
 
-void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& Min, float& Max)
+void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Polygon& Shape, float& Min, float& Max)
 {
 	// Assume initial min/max
 	Min = Shape.mVerticesPositions.at(0).DotProduct(Axis);
@@ -742,7 +742,7 @@ void GetMinMaxVertexOnAxisShape(const Vector2& Axis, const Shape& Shape, float& 
 // Inputs: Shape, Circle, Collision data. All passed by reference as their axes and vertices will be updated.
 // Outputs: Returns trueif Shape and Circle are colliding.
 // Collision Data is updated with the normal pointing from the Circle to the Shape.
-bool ShapeToCircleSAT(Shape& FirstPolygon, Circle& SecondCircle, CollisionData& Data)
+bool ShapeToCircleSAT(Polygon& FirstPolygon, Circle& SecondCircle, CollisionData& Data)
 {
 	// Udpate vertices positions of polygon and centre position of circle
 	FirstPolygon.UpdateVerticesPosition();
@@ -815,7 +815,7 @@ void Circle::UpdateCentrePos()
 }
 
 // Axis to use for a circle is from the centre of the circle to the closest point on the polygon.
-void Circle::UpdateAxis(Shape& Poly)
+void Circle::UpdateAxis(Polygon& Poly)
 {
 	float MinDist = FLT_MAX;
 	int ClosestIndex = -1;
@@ -836,7 +836,7 @@ void Circle::UpdateAxis(Shape& Poly)
 }
 
 // Using this video for outline of implementation https://youtu.be/vWs33LVrs74?si=OyFbAbT5qoq8Um0w
-bool CheckCollisionAxisShapeCircle(const Vector2& Axis, const Shape& Poly, const Circle& Circ, CollisionData& Data)
+bool CheckCollisionAxisShapeCircle(const Vector2& Axis, const Polygon& Poly, const Circle& Circ, CollisionData& Data)
 {
 	// point A = min on shape 1, point B = max on shape 1.
 	// point C = min on shape 2, point D = max on shape 2.
