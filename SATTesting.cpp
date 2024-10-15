@@ -13,6 +13,8 @@ const int SquareNumAxesToCheck = 2;
 const float DegreesToRadians = 3.14159265359f / 180.0f;
 const float ShapeHiddenHeight = -15.0f;
 const float ShapeVisibleHeight = 0.0f;
+const float MoveSpeed = 10.0f;
+const float RotateSpeed = 60.0f;
 
 // Game states
 enum EShapeControl { eCircle, eTriangle, eSquare, ePentagon, eNumShapeControl };
@@ -127,28 +129,19 @@ int main()
 	//myEngine->AddMediaFolder(".\\Media");
 
 	/**** Set up your scene here ****/
+
+	// Load meshes
 	Mesh* CubeMesh = myEngine->LoadMesh("Cube.fbx");
-	/*Model* Cube = CubeMesh->CreateModel();*/
-
 	Mesh* FloorMesh = myEngine->LoadMesh("Floor.fbx");
-	Model* Floor = FloorMesh->CreateModel();
-
 	Mesh* SphereMesh = myEngine->LoadMesh("Sphere.fbx");
-	//Model* Sphere = SphereMesh->CreateModel();
-
 	Mesh* BulletMesh = myEngine->LoadMesh("Bullet.x");
-	/*Model* Bullet = BulletMesh->CreateModel();*/
 
-	/*Mesh* TorusMesh = myEngine->LoadMesh("Torus.fbx");
-	Model* Torus = TorusMesh->CreateModel();*/
-
+	// Create floor and Camera
+	Model* Floor = FloorMesh->CreateModel();
 	Camera* MyCamera = myEngine->CreateCamera(ManualCamera, 0.0f, 100.0f, 0.0f);
 	MyCamera->RotateX(90.0f);
 
-	const float MoveSpeed = 10.0f;
-	const float RotateSpeed = 60.0f;
-
-	// Array of shapes to test against
+	// Array of fixed in place shapes to test against
 	const int NumBackgroundShapes = 10;
 	Polygon BackgroundShapesArray[NumBackgroundShapes];
 	for (int i = 0; i < NumBackgroundShapes; i++)
@@ -156,24 +149,6 @@ int main()
 		BackgroundShapesArray[i].InitialiseShape(BulletMesh, BulletMesh, i + 3, 10.0f);
 		BackgroundShapesArray[i].mCentre->SetPosition(i * 40.0f, 0.0f, 0.0f);
 	}
-
-	// Array of circles to test spheres against
-	const int NumCircles = 3;
-	Circle CirclesArray[NumCircles];
-	for (int i = 0; i < NumCircles; i++)
-	{
-		CirclesArray[i].InitialiseCircle(SphereMesh, 10.0f);
-		CirclesArray[i].mCentre->SetPosition(i * 30.0f, 0.0f, 60.0f);
-	}
-
-	//// Cube test
-	//Shape Test;
-	//Test.InitialiseShape(BulletMesh, BulletMesh, 3, 10.0f);
-	//Test.mCentre->SetPosition(-50.0f, 0.0f, 0.0f);
-
-	//Shape Test2;
-	//Test2.InitialiseShape(BulletMesh, BulletMesh, 4, 20.0f);
-	//Test2.mCentre->SetPosition(50.0f, 0.0f, 0.0f);
 
 	// Setup shapes for control
 	EShapeControl CurrentShapeControl = eCircle;
@@ -189,14 +164,6 @@ int main()
 		ControlShapesArray[i - 1].InitialiseShape(BulletMesh, BulletMesh, (i + 2), 10.0f);
 		ControlShapesArray[i - 1].mCentre->SetLocalY(ShapeHiddenHeight);
 	}
-
-	//// shape test
-	//Shape Pentagon;
-	//Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 5.0f);
-
-	//// Circle test
-	//Circle MyCircle;
-	//MyCircle.InitialiseCircle(SphereMesh, 10.0f);
 
 	MyCamera->AttachToParent(ControlCircle.mCentre);
 
@@ -317,131 +284,53 @@ int main()
 			}
 		}
 
-		//// Check collision
-		//if (TwoSquaresSAT(Test, Test2))
-		//{
-		//	Test.CentreDummy->SetSkin("RedBall.jpg");
-		//	Test2.CentreDummy->SetSkin("RedBall.jpg");
-		//}
-		//else
-		//{
-		//	Test.CentreDummy->SetSkin("Grass1.jpg");
-		//	Test2.CentreDummy->SetSkin("Grass1.jpg");
-		//}
-
-		//// Rotate the two other polygons
-		/*Test.mCentre->RotateY(DeltaTime*RotateSpeed);
-		Test2.mCentre->RotateY(DeltaTime * RotateSpeed);*/
-
-		//// Shape control - rotate
-		//if (myEngine->KeyHeld(Key_E))
-		//{
-		//	MyCircle.mCentre->RotateY(DeltaTime * RotateSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_Q))
-		//{
-		//	MyCircle.mCentre->RotateY(-DeltaTime * RotateSpeed);
-		//}
-
-		//// Square control - translate
-		//if (myEngine->KeyHeld(Key_W))
-		//{
-		//	MyCircle.mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_S))
-		//{
-		//	MyCircle.mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_A))
-		//{
-		//	MyCircle.mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_D))
-		//{
-		//	MyCircle.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
-		//}
-
 		// Data for collision
 		CollisionData ColData;
 		ColData.InitialiseData();
 
-		//// Circle collision with shapes array
-		//for (int i = 0; i < NumBackgroundShapes; i++)
-		//{
-		//	if (ShapeToCircleSAT(BackgroundShapesArray[i], MyCircle, ColData))
-		//	{
-		//		BackgroundShapesArray[i].mCentre->SetSkin("RedBall.jpg");
+		// Test for collision
+		if (CurrentShapeControl == eCircle)
+		{
+			// Circle to polygon SAT
+			for (int i = 0; i < NumBackgroundShapes; i++)
+			{
+				if (ShapeToCircleSAT(BackgroundShapesArray[i], ControlCircle, ColData))
+				{
+					BackgroundShapesArray[i].mCentre->SetSkin("RedBall.jpg");
 
-		//		// Resolve collision
-		//		MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
-		//		MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
-		//	}
-		//	else
-		//	{
-		//		BackgroundShapesArray[i].mCentre->SetSkin("Grass1.jpg");
-		//	}
+					// Resolve collision
+					ControlCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
+					ControlCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
+				}
+				else
+				{
+					BackgroundShapesArray[i].mCentre->SetSkin("Grass1.jpg");
+				}
 
-		//	ColData.InitialiseData();
-		//}
+				ColData.InitialiseData();
+			}
+		}
+		else
+		{
+			// Polygon to polygon SAT
+			for (int i = 0; i < NumBackgroundShapes; i++)
+			{
+				if (TwoShapesSAT(ControlShapesArray[ShapeIndex - 1], BackgroundShapesArray[i], ColData))
+				{
+					BackgroundShapesArray[i].mCentre->SetSkin("RedBall.jpg");
 
-		//// Check circle collision with shapes
-		//if (ShapeToCircleSAT(Test, MyCircle, ColData))
-		//{
-		//	Test.mCentre->SetSkin("RedBall.jpg");
+					// Resolve collision
+					ControlShapesArray[ShapeIndex - 1].mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
+					ControlShapesArray[ShapeIndex - 1].mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
+				}
+				else
+				{
+					BackgroundShapesArray[i].mCentre->SetSkin("Grass1.jpg");
+				}
 
-		//	// Resolve collision
-		//	MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
-		//	MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
-		//}
-		//else
-		//{
-		//	Test.mCentre->SetSkin("Grass1.jpg");
-		//}
-
-		//if (ShapeToCircleSAT(Test2, MyCircle, ColData))
-		//{
-		//	Test2.mCentre->SetSkin("RedBall.jpg");
-
-		//	// Resolve collision
-		//	MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
-		//	MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
-		//}
-		//else
-		//{
-		//	Test2.mCentre->SetSkin("Grass1.jpg");
-		//}
-
-		//// Check collision - First square and shape
-		//if (TwoShapesSAT(Pentagon, Test, ColData))
-		//{
-		//	Test.mCentre->SetSkin("RedBall.jpg");
-
-		//	// Resolve collision
-		//	Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-		//	Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
-
-		//	std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
-		//}
-		//else
-		//{
-		//	Test.mCentre->SetSkin("Grass1.jpg");
-		//}
-
-		//// Check collision - Second square and shape
-		//if (TwoShapesSAT(Pentagon, Test2, ColData))
-		//{
-		//	Test2.mCentre->SetSkin("RedBall.jpg");
-
-		//	// Resolve collision
-		//	Pentagon.mCentre->MoveX(ColData.mPenetration * ColData.mNormal.x);
-		//	Pentagon.mCentre->MoveZ(ColData.mPenetration * ColData.mNormal.y);
-
-		//	std::cout << "Pen: " << ColData.mPenetration << " Normal X: " << ColData.mNormal.x << " Normal Z: " << ColData.mNormal.y << std::endl;
-		//}
-		//else
-		//{
-		//	Test2.mCentre->SetSkin("Grass1.jpg");
-		//}
+				ColData.InitialiseData();
+			}
+		}
 
 		// Stop if the Escape key is pressed
 		if (myEngine->KeyHit(Key_Escape))
