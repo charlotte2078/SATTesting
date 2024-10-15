@@ -41,10 +41,16 @@ struct Vector2
 	Vector2 PerpendicularVector() const;
 };
 
-// This is for regular polygons for now.
-struct Polygon
+// Base struct for shapes
+struct Shape
 {
 	Model* mCentre;
+};
+
+// This is for regular polygons for now.
+struct Polygon : public Shape
+{
+	//Model* mCentre;
 	std::vector<Model*> mVertices;
 	std::vector<Vector2> mVerticesPositions;
 	std::vector<Vector2> mAxes;
@@ -54,9 +60,9 @@ struct Polygon
 	void UpdateAxes();
 };
 
-struct Circle
+struct Circle : public Shape
 {
-	Model* mCentre;
+	//Model* mCentre;
 	float mRadius;
 	Vector2 mCentrePosition;
 	Vector2 mAxis;
