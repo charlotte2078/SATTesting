@@ -11,7 +11,8 @@ using namespace tle;
 const int SquareNumCorners = 4;
 const int SquareNumAxesToCheck = 2;
 const float DegreesToRadians = 3.14159265359f / 180.0f;
-const float ShapeHiddenHeight = -10.0f;
+const float ShapeHiddenHeight = -15.0f;
+const float ShapeVisibleHeight = 0.0f;
 
 // Game states
 enum EShapeControl { eCircle, eTriangle, eSquare, ePentagon, eNumShapeControl };
@@ -172,20 +173,24 @@ int main()
 	Circle ControlCircle;
 	ControlCircle.InitialiseCircle(SphereMesh, 10.0f);
 
-	for (int i = 0; i < eNumShapeControl; i++)
-	{
+	Shape ControlShapesArray[eNumShapeControl - 1]; // -1 to skip circle
 
+	// Start index at 1 to skip circle
+	for (int i = 1; i < eNumShapeControl; i++)
+	{
+		ControlShapesArray[i - 1].InitialiseShape(BulletMesh, BulletMesh, (i + 2), 10.0f);
+		ControlShapesArray[i - 1].mCentre->SetLocalY(ShapeHiddenHeight);
 	}
 
-	// shape test
-	Shape Pentagon;
-	Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 5.0f);
+	//// shape test
+	//Shape Pentagon;
+	//Pentagon.InitialiseShape(BulletMesh, BulletMesh, 5, 5.0f);
 
-	// Circle test
-	Circle MyCircle;
-	MyCircle.InitialiseCircle(SphereMesh, 10.0f);
+	//// Circle test
+	//Circle MyCircle;
+	//MyCircle.InitialiseCircle(SphereMesh, 10.0f);
 
-	MyCamera->AttachToParent(Pentagon.mCentre);
+	MyCamera->AttachToParent(ControlCircle.mCentre);
 
 	// The main game loop, repeat until engine is stopped
 	while (myEngine->IsRunning())
@@ -213,7 +218,23 @@ int main()
 			}
 		}
 
-		// 
+		// Test for changing shape control
+		if (myEngine->KeyHit(ShapeCycleKey))
+		{
+			// Get position of shape currently in contol of
+			Vector2 OldShapePos;
+
+			// Move old shape to hidden height
+
+			// Change control to next enum
+
+			// Move new shape to old shape (and at unhiddenheight)
+
+
+		}
+
+		// Shape control
+
 
 		//// Square control - rotate
 		//if (myEngine->KeyHeld(Key_E))
