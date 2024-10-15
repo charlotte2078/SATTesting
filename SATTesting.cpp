@@ -45,6 +45,9 @@ struct Vector2
 struct Shape
 {
 	Model* mCentre;
+
+	Vector2 GetCentrePos() const;
+	void MoveToPos(const Vector2& NewPos);
 };
 
 // This is for regular polygons for now.
@@ -181,7 +184,6 @@ int main()
 
 	Polygon ControlShapesArray[eNumShapeControl - 1]; // -1 to skip circle
 
-	// Start index at 1 to skip circle
 	for (int i = 1; i < eNumShapeControl; i++)
 	{
 		ControlShapesArray[i - 1].InitialiseShape(BulletMesh, BulletMesh, (i + 2), 10.0f);
@@ -224,51 +226,96 @@ int main()
 			}
 		}
 
+		// Get index of current shape
+		int ShapeIndex = static_cast<int>(CurrentShapeControl);
+
 		// Test for changing shape control
 		if (myEngine->KeyHit(ShapeCycleKey))
 		{
 			// Get position of shape currently in contol of
 			Vector2 OldShapePos;
+			
+			// Check for circle
+			if (CurrentShapeControl == eCircle)
+			{
+				OldShapePos = ControlCircle.GetCentrePos();
 
-			// Move old shape to hidden height
+				// Move old shape to hidden height
+				ControlCircle.mCentre->SetY(ShapeHiddenHeight);
+			}
+			else
+			{
+				OldShapePos = ControlShapesArray[ShapeIndex - 1].GetCentrePos(); // -1 to get correct array value
+
+				// Move old shape to hidden height
+				ControlShapesArray[ShapeIndex - 1].mCentre->SetY(ShapeHiddenHeight);
+			}
 
 			// Change control to next enum
+			ShapeIndex++;
+
+			if (ShapeIndex == eNumShapeControl)
+			{
+				ShapeIndex = 0;
+			}
+
+			CurrentShapeControl = static_cast<EShapeControl>(ShapeIndex);
 
 			// Move new shape to old shape (and at unhiddenheight)
-
+			if (CurrentShapeControl == eCircle)
+			{
+				ControlCircle.MoveToPos(OldShapePos);
+				ControlCircle.mCentre->SetY(ShapeVisibleHeight);
+				MyCamera->AttachToParent(ControlCircle.mCentre);
+			}
+			else
+			{
+				ControlShapesArray[ShapeIndex - 1].MoveToPos(OldShapePos); // -1 to get correct array value
+				ControlShapesArray[ShapeIndex - 1].mCentre->SetY(ShapeVisibleHeight);
+				MyCamera->AttachToParent(ControlShapesArray[ShapeIndex - 1].mCentre);
+			}
 
 		}
-
+		
 		// Shape control
-
-
-		//// Square control - rotate
-		//if (myEngine->KeyHeld(Key_E))
-		//{
-		//	Test.CentreDummy->RotateY(DeltaTime * RotateSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_Q))
-		//{
-		//	Test.CentreDummy->RotateY(-DeltaTime * RotateSpeed);
-		//}
-
-		//// Square control - translate
-		//if (myEngine->KeyHeld(Key_W))
-		//{
-		//	Test.CentreDummy->MoveLocalZ(DeltaTime * MoveSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_S))
-		//{
-		//	Test.CentreDummy->MoveLocalZ(-DeltaTime * MoveSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_A))
-		//{
-		//	Test.CentreDummy->MoveLocalX(-DeltaTime * MoveSpeed);
-		//}
-		//if (myEngine->KeyHeld(Key_D))
-		//{
-		//	Test.CentreDummy->MoveLocalX(DeltaTime * MoveSpeed);
-		//}
+		if (CurrentShapeControl == eCircle)
+		{
+			if (myEngine->KeyHeld(UpKey))
+			{
+				ControlCircle.mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
+			}
+			if (myEngine->KeyHeld(DownKey))
+			{
+				ControlCircle.mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
+			}
+			if (myEngine->KeyHeld(LeftKey))
+			{
+				ControlCircle.mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
+			}
+			if (myEngine->KeyHeld(RightKey))
+			{
+				ControlCircle.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
+			}
+		}
+		else
+		{
+			if (myEngine->KeyHeld(UpKey))
+			{
+				ControlShapesArray[ShapeIndex - 1].mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
+			}
+			if (myEngine->KeyHeld(DownKey))
+			{
+				ControlShapesArray[ShapeIndex - 1].mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
+			}
+			if (myEngine->KeyHeld(LeftKey))
+			{
+				ControlShapesArray[ShapeIndex - 1].mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
+			}
+			if (myEngine->KeyHeld(RightKey))
+			{
+				ControlShapesArray[ShapeIndex - 1].mCentre->MoveLocalX(DeltaTime * MoveSpeed);
+			}
+		}
 
 		//// Check collision
 		//if (TwoSquaresSAT(Test, Test2))
@@ -286,56 +333,56 @@ int main()
 		/*Test.mCentre->RotateY(DeltaTime*RotateSpeed);
 		Test2.mCentre->RotateY(DeltaTime * RotateSpeed);*/
 
-		// Shape control - rotate
-		if (myEngine->KeyHeld(Key_E))
-		{
-			MyCircle.mCentre->RotateY(DeltaTime * RotateSpeed);
-		}
-		if (myEngine->KeyHeld(Key_Q))
-		{
-			MyCircle.mCentre->RotateY(-DeltaTime * RotateSpeed);
-		}
+		//// Shape control - rotate
+		//if (myEngine->KeyHeld(Key_E))
+		//{
+		//	MyCircle.mCentre->RotateY(DeltaTime * RotateSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_Q))
+		//{
+		//	MyCircle.mCentre->RotateY(-DeltaTime * RotateSpeed);
+		//}
 
-		// Square control - translate
-		if (myEngine->KeyHeld(Key_W))
-		{
-			MyCircle.mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
-		}
-		if (myEngine->KeyHeld(Key_S))
-		{
-			MyCircle.mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
-		}
-		if (myEngine->KeyHeld(Key_A))
-		{
-			MyCircle.mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
-		}
-		if (myEngine->KeyHeld(Key_D))
-		{
-			MyCircle.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
-		}
+		//// Square control - translate
+		//if (myEngine->KeyHeld(Key_W))
+		//{
+		//	MyCircle.mCentre->MoveLocalZ(DeltaTime * MoveSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_S))
+		//{
+		//	MyCircle.mCentre->MoveLocalZ(-DeltaTime * MoveSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_A))
+		//{
+		//	MyCircle.mCentre->MoveLocalX(-DeltaTime * MoveSpeed);
+		//}
+		//if (myEngine->KeyHeld(Key_D))
+		//{
+		//	MyCircle.mCentre->MoveLocalX(DeltaTime * MoveSpeed);
+		//}
 
 		// Data for collision
 		CollisionData ColData;
 		ColData.InitialiseData();
 
-		// Circle collision with shapes array
-		for (int i = 0; i < NumBackgroundShapes; i++)
-		{
-			if (ShapeToCircleSAT(BackgroundShapesArray[i], MyCircle, ColData))
-			{
-				BackgroundShapesArray[i].mCentre->SetSkin("RedBall.jpg");
+		//// Circle collision with shapes array
+		//for (int i = 0; i < NumBackgroundShapes; i++)
+		//{
+		//	if (ShapeToCircleSAT(BackgroundShapesArray[i], MyCircle, ColData))
+		//	{
+		//		BackgroundShapesArray[i].mCentre->SetSkin("RedBall.jpg");
 
-				// Resolve collision
-				MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
-				MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
-			}
-			else
-			{
-				BackgroundShapesArray[i].mCentre->SetSkin("Grass1.jpg");
-			}
+		//		// Resolve collision
+		//		MyCircle.mCentre->MoveX(-ColData.mPenetration * ColData.mNormal.x);
+		//		MyCircle.mCentre->MoveZ(-ColData.mPenetration * ColData.mNormal.y);
+		//	}
+		//	else
+		//	{
+		//		BackgroundShapesArray[i].mCentre->SetSkin("Grass1.jpg");
+		//	}
 
-			ColData.InitialiseData();
-		}
+		//	ColData.InitialiseData();
+		//}
 
 		//// Check circle collision with shapes
 		//if (ShapeToCircleSAT(Test, MyCircle, ColData))
@@ -890,4 +937,15 @@ void GetMinMaxVertexOnAxisCircle(const Vector2& Axis, const Circle& Circ, float&
 		Min = Max;
 		Max = temp;
 	}
+}
+
+Vector2 Shape::GetCentrePos() const
+{
+	return Vector2(mCentre->GetX(), mCentre->GetZ());
+}
+
+void Shape::MoveToPos(const Vector2& NewPos)
+{
+	mCentre->SetX(NewPos.x);
+	mCentre->SetZ(NewPos.y);
 }
