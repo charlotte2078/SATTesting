@@ -85,7 +85,7 @@ struct Square
 	Vector2 VerticesPositionArray[SquareNumCorners];
 	Vector2 AxesArray[SquareNumAxesToCheck];
 
-	void InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const int Side);
+	void InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const float Side);
 	void UpdateVerticesPosition();
 	void UpdateAxesArray();
 };
@@ -404,7 +404,7 @@ Vector2 Vector2::PerpendicularVector() const
 }
 
 // Sets up the square
-void Square::InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const int Side)
+void Square::InitialiseSquare(Mesh* DummyMesh, Mesh* CornerMesh, const float Side)
 {
 	// Create centre dummy model
 	CentreDummy = DummyMesh->CreateModel();
